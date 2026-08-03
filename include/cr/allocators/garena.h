@@ -85,6 +85,19 @@ bool cr_garena_alloc(cr_garena_t *arena, size_t size, void **out, cr_error_t *re
 bool cr_garena_aligned_alloc(cr_garena_t *arena, size_t size, size_t alignment, void **out, cr_error_t *restrict err);
 
 /*
+ * cr_garena_alloc_zeroed / cr_garena_aligned_alloc_zeroed
+ *
+ * Same contract as cr_garena_alloc / cr_garena_aligned_alloc, except
+ * the returned memory is guaranteed all-zero. Same reasoning as the
+ * fixed-size arena's zeroed variants (cr/allocators/arena.h): always
+ * memset unconditionally rather than tracking kernel-fresh vs.
+ * reset-and-reused memory, since that tracking isn't justified
+ * without evidence the redundant memset cost matters in practice.
+ */
+bool cr_garena_alloc_zeroed(cr_garena_t *arena, size_t size, void **out, cr_error_t *restrict err);
+bool cr_garena_aligned_alloc_zeroed(cr_garena_t *arena, size_t size, size_t alignment, void **out, cr_error_t *restrict err);
+
+/*
  * cr_garena_reset
  *
  * Rewinds ALL chunks' cursors back to their own start AND frees

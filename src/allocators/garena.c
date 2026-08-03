@@ -2,6 +2,10 @@
 #include "cr/internal/syscalls/syscall_wrappers.h"
 
 #include <stdint.h>
+#include <string.h> /* memset --- see arena.c for why this specific
+                        libc function is fine (freestanding
+                        guarantee + compiler builtin), unlike the
+                        general no-libc policy elsewhere. */
 
 /*
  * Chain layout: each chunk is its own mmap, header-embedded exactly
@@ -258,6 +262,27 @@ bool cr_garena_aligned_alloc(cr_garena_t *arena, size_t size, size_t alignment, 
 bool cr_garena_alloc(cr_garena_t *arena, size_t size, void **out, cr_error_t *restrict err)
 {
     return cr_garena_aligned_alloc(arena, size, CR_GARENA_DEFAULT_ALIGN, out, err);
+}
+
+bool cr_garena_aligned_alloc_zeroed(cr_garena_t *arena, size_t size, size_t alignment, void **out, cr_error_t *restrict err)
+{
+    /* Same delegation pattern as the fixed-size arena: reuse the real
+       allocator (including its own transparent-growth-on-exhaustion
+       behavior) for everything except zeroing. If the underlying
+       alloc had to grow the chain to satisfy this request, that
+       already happened inside this call --- we don't need to know or
+       care here, `*out` is just wherever the real allocator decided
+       to put it. */
+    if (!cr_garena_aligned_alloc(arena, size, alignment, out, err))
+        return false;
+
+    memset(*out, 0, size);
+    return true;
+}
+
+bool cr_garena_alloc_zeroed(cr_garena_t *arena, size_t size, void **out, cr_error_t *restrict err)
+{
+    return cr_garena_aligned_alloc_zeroed(arena, size, CR_GARENA_DEFAULT_ALIGN, out, err);
 }
 
 void cr_garena_reset(cr_garena_t *arena)

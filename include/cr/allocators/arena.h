@@ -90,6 +90,28 @@ bool cr_arena_alloc(cr_arena_t *arena, size_t size, void **out, cr_error_t *rest
 bool cr_arena_aligned_alloc(cr_arena_t *arena, size_t size, size_t alignment, void **out, cr_error_t *restrict err);
 
 /*
+ * cr_arena_alloc_zeroed / cr_arena_aligned_alloc_zeroed
+ *
+ * Same contract as cr_arena_alloc / cr_arena_aligned_alloc, except the
+ * returned memory is guaranteed to be all-zero bytes.
+ *
+ * Note: freshly mmap'd anonymous memory is ALREADY zero-filled by the
+ * kernel, so the very first allocation from a never-reset arena costs
+ * nothing extra here beyond the ordinary alloc path. After a
+ * cr_arena_reset, though, previously-used memory can be handed out
+ * again, and it may contain whatever the prior occupant wrote --- so
+ * these functions always zero the returned region unconditionally
+ * rather than trying to track whether a given address range is still
+ * kernel-fresh. That tracking would save a redundant memset in the
+ * common (never-reset) case, at the cost of bookkeeping.
+ *
+ * Same failure modes as the non-zeroed versions; on failure, no
+ * memory is touched.
+ */
+bool cr_arena_alloc_zeroed(cr_arena_t *arena, size_t size, void **out, cr_error_t *restrict err);
+bool cr_arena_aligned_alloc_zeroed(cr_arena_t *arena, size_t size, size_t alignment, void **out, cr_error_t *restrict err);
+
+/*
  * cr_arena_reset
  *
  * Rewinds the arena's cursor back to the start of its usable region.

@@ -2,6 +2,13 @@
 #include "cr/internal/syscalls/syscall_wrappers.h"
 
 #include <stdint.h>
+#include <string.h> /* memset --- one of the specific functions the C
+                        standard itself classifies as available even
+                        in a freestanding environment, and
+                        one GCC/Clang can inline directly as a builtin
+                        rather than a real linked call. Not the same
+                        category as libc functions we've deliberately
+                        avoided elsewhere (snprintf, malloc, etc). */
 
 /*
  * Layout: a single mmap holding the header followed immediately by
@@ -130,6 +137,35 @@ bool cr_arena_aligned_alloc(cr_arena_t *arena, size_t size, size_t alignment, vo
 bool cr_arena_alloc(cr_arena_t *arena, size_t size, void **out, cr_error_t *restrict err)
 {
     return cr_arena_aligned_alloc(arena, size, CR_ARENA_DEFAULT_ALIGN, out, err);
+}
+
+bool cr_arena_aligned_alloc_zeroed(cr_arena_t *arena, size_t size, size_t alignment, void **out, cr_error_t *restrict err)
+{
+    /* Delegate entirely to the non-zeroed path first --- same
+       validation (NULL checks, size==0, power-of-two alignment,
+       exhaustion), same failure codes, same "cursor not partially
+       advanced on failure" guarantee. This function adds exactly one
+       behavior on top: zeroing the result. No separate logic path to
+       keep in sync with the real allocator above. */
+    if (!cr_arena_aligned_alloc(arena, size, alignment, out, err))
+        return false;
+
+    /* Always zeroed unconditionally, even though a never-reset
+       arena's memory is already kernel-zeroed --- see the header
+       comment for why we don't try to detect and skip that redundant
+       case. `*out` and `size` here are exactly what the call above
+       just validated and handed back, so this memset is always
+       operating on memory we know we just carved out and own. */
+    memset(*out, 0, size);
+    return true;
+}
+
+bool cr_arena_alloc_zeroed(cr_arena_t *arena, size_t size, void **out, cr_error_t *restrict err)
+{
+    /* Thin convenience wrapper, exactly mirroring the relationship
+       between cr_arena_alloc and cr_arena_aligned_alloc: no separate
+       implementation, just the default alignment supplied. */
+    return cr_arena_aligned_alloc_zeroed(arena, size, CR_ARENA_DEFAULT_ALIGN, out, err);
 }
 
 void cr_arena_reset(cr_arena_t *arena)
