@@ -18,6 +18,20 @@ typedef enum
 {
     CR_OK = 0,
 
+    /*
+     * CR_SYS_* --- syscall / OS boundary failures, mapped from the
+     * kernel's `-errno` return by the internal syscall wrapper module
+     * (`cr/internal/syscall_wrappers.h`). `CR_SYS_EOTHER` is the
+     * fallback for any errno value not yet given its own named code
+     * here --- the raw numeric errno is still included in `err->msg`
+     * in that case, so no information is actually lost, only less
+     * machine-checkable.
+     */
+
+    CR_SYS_ENOMEM,
+    CR_SYS_EINVAL,
+    CR_SYS_EOTHER,
+
 } cr_errcode_t;
 
 /*
