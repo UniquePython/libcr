@@ -1,4 +1,4 @@
-#include "cr/arena.h"
+#include "cr/allocators/arena.h"
 #include "cr/internal/syscalls/syscall_wrappers.h"
 
 #include <stdint.h>

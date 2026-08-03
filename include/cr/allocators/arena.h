@@ -1,5 +1,5 @@
-#ifndef CR_ARENA_H
-#define CR_ARENA_H
+#ifndef CR_ALLOCATORS_ARENA_H
+#define CR_ALLOCATORS_ARENA_H
 
 #include <stddef.h>
 #include <stdbool.h>
@@ -102,4 +102,4 @@ bool cr_arena_aligned_alloc(cr_arena_t *arena, size_t size, size_t alignment, vo
  */
 void cr_arena_reset(cr_arena_t *arena);
 
-#endif /* CR_ARENA_H */
+#endif /* CR_ALLOCATORS_ARENA_H */
