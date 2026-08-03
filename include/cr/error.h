@@ -32,6 +32,17 @@ typedef enum
     CR_SYS_EINVAL,
     CR_SYS_EOTHER,
 
+    /*
+     * CR_MEM_* --- allocator-level failures, raised by libcr's own
+     * memory modules (e.g. the arena allocator) rather than mapped
+     * from a raw kernel errno. These fire when the *request itself*
+     * is invalid or unsatisfiable, as opposed to CR_SYS_* which fires
+     * when the *kernel* rejected a syscall.
+     */
+
+    CR_MEM_BAD_ARGS,  /* bad arguments: zero size, bad alignment, NULL out-param */
+    CR_MEM_EXHAUSTED, /* arena has no room left for this allocation */
+
 } cr_errcode_t;
 
 /*
