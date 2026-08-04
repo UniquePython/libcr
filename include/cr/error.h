@@ -98,7 +98,7 @@ typedef struct
  * this themselves.
  *
  * fmt supports a minimal, provisional subset: %s %d %u %zu %%
- * (see cr/internal/fmt_provisional.h). No width/precision/flags/float.
+ * (see src/cr/internal/error_fmt.h). No width/precision/flags/float.
  */
 void cr_error_set(cr_error_t *restrict err, cr_errcode_t code, const char *restrict fmt, ...);
 

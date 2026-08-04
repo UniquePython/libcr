@@ -10,7 +10,7 @@
  * Scoped strictly to what libcr modules actually need TODAY --- this
  * is not a general POSIX-shaped syscall library. New syscalls get added
  * here only when a real module needs them, following the same discipline
- * as cr_errcode_t's enum and fmt_provisional's conversion support.
+ * as cr_errcode_t's enum and error_fmt's conversion support.
  *
  * Where cr/internal/syscall.h is a raw, uninterpreted ABI bridge,
  * this layer is where that raw -errno finally becomes cr_error_t

@@ -1,10 +1,24 @@
-#ifndef CR_INTERNAL_FMT_H
-#define CR_INTERNAL_FMT_H
+#ifndef CR_INTERNAL_ERROR_FMT_H
+#define CR_INTERNAL_ERROR_FMT_H
 
 /*
- * Minimal formatter scoped ONLY to what cr_error_set /
- * cr_error_wrap need. This is NOT the library's real string/format
- * module.
+ * Minimal formatter, private to error.c, scoped ONLY to what
+ * cr_error_set / cr_error_wrap need. This is NOT the library's real
+ * string/format module --- that is the public cr/fmt.h, which this
+ * file has no relationship to and no dependency on.
+ *
+ * This lives under src/, not include/: it is build-internal plumbing
+ * between error.c and error_fmt.c, never a public API. No consumer
+ * of libcr should ever include this header, and nothing outside
+ * error.c should either --- if some other module needs formatting,
+ * it should use cr/fmt.h, not this.
+ *
+ * Permanently minimal and permanently private, by design: error.c
+ * sits at the bottom of libcr's dependency stack and must never
+ * depend on cr/fmt.h (which itself depends on cr/error.h) --- doing
+ * so would create a cycle. This file is what lets error.c produce
+ * decent messages without that dependency ever existing. See
+ * cr/fmt.h's module comment for the other side of this reasoning.
  *
  * Do not add features here beyond what error.c actually calls for.
  */
@@ -48,4 +62,4 @@ size_t cr_vformat(char *restrict buf, size_t bufsize, const char *restrict fmt, 
  */
 size_t cr_format(char *restrict buf, size_t bufsize, const char *restrict fmt, ...);
 
-#endif /* CR_INTERNAL_FMT_H */
+#endif /* CR_INTERNAL_ERROR_FMT_H */
