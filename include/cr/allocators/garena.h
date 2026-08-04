@@ -44,7 +44,7 @@ typedef struct cr_garena cr_garena_t;
  * Same contract as the fixed-size cr_arena_create, except the initial
  * chunk establishes the growth baseline for subsequent chunks.
  *
- *   - CR_MEM_BAD_ARGS  if `size` is 0, or `out` is NULL.
+ *   - CR_MEM_BAD_ARGS  if size is 0, or out is NULL.
  *   - CR_SYS_*         if the initial mmap fails.
  */
 bool cr_garena_create(size_t size, cr_garena_t **out, cr_error_t *restrict err);
@@ -53,7 +53,7 @@ bool cr_garena_create(size_t size, cr_garena_t **out, cr_error_t *restrict err);
  * cr_garena_destroy
  *
  * Unmaps EVERY chunk in the chain, not just the most recent one.
- * Safe to call with `arena == NULL` (no-op). Best-effort: a failed
+ * Safe to call with arena == NULL (no-op). Best-effort: a failed
  * munmap partway through the chain does not stop the rest of the
  * chain from being unmapped (see .c file for why, and what happens to
  * that failure).
@@ -73,10 +73,10 @@ void cr_garena_destroy(cr_garena_t *arena);
  * chosen).
  *
  * Still validates before touching anything, same as v1:
- *   - CR_MEM_BAD_ARGS if `arena` or `out` is NULL.
- *   - CR_MEM_BAD_ARGS if `size` is 0.
- *   - CR_MEM_BAD_ARGS if `alignment` is 0 or not a power of two.
- *   - CR_MEM_BAD_ARGS if `size` alone exceeds what ANY chunk could
+ *   - CR_MEM_BAD_ARGS if arena or out is NULL.
+ *   - CR_MEM_BAD_ARGS if size is 0.
+ *   - CR_MEM_BAD_ARGS if alignment is 0 or not a power of two.
+ *   - CR_MEM_BAD_ARGS if size alone exceeds what ANY chunk could
  *                     ever hold (i.e. size > the max chunk size this
  *                     arena is willing to grow to --- see
  *                     CR_ARENA_MAX_SINGLE_ALLOC in the .c file).
@@ -112,7 +112,7 @@ bool cr_garena_aligned_alloc_zeroed(cr_garena_t *arena, size_t size, size_t alig
  * If you need a reset that never syscalls even after growth, that's
  * a different function with a different name --- not this one.
  *
- * Safe to call with `arena == NULL` (no-op).
+ * Safe to call with arena == NULL (no-op).
  */
 void cr_garena_reset(cr_garena_t *arena);
 

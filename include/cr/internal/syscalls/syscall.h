@@ -4,20 +4,20 @@
 /*
  * x86-64 Linux ONLY --- these are a direct bridge to the
  * kernel syscall ABI on this one architecture. There is no portable
- * fallback and none is intended: if `libcr` ever targets a second
+ * fallback and none is intended: if libcr ever targets a second
  * architecture, this file gets a sibling (e.g. syscall_arm64.S) behind
  * the same declarations below, not a rewrite of this one.
  *
- * Each `cr_syscallN` puts `nr` in `rax`, the N arguments in
- * `rdi, rsi, rdx, r10, r8, r9` (in that order --- note this is NOT
- * the ordinary C calling convention's 4th register; `rcx` is skipped
- * because the `syscall` instruction clobbers it), executes `syscall`,
- * and returns whatever the kernel left in `rax` --- untouched.
+ * Each cr_syscallN puts nr in rax, the N arguments in
+ * rdi, rsi, rdx, r10, r8, r9 (in that order --- note this is NOT
+ * the ordinary C calling convention's 4th register; rcx is skipped
+ * because the syscall instruction clobbers it), executes syscall,
+ * and returns whatever the kernel left in rax --- untouched.
  *
  * That return value is EITHER a non-negative success result OR
- * `-errno` (a small negative value) on failure. These functions do
+ * -errno (a small negative value) on failure. These functions do
  * NOT interpret it either way. Translating a raw negative return into
- * `cr_error_t` / `CR_SYS_*` is the job of whatever calls these ---
+ * cr_error_t / CR_SYS_* is the job of whatever calls these ---
  * e.g. the arena allocator's own mmap/munmap wrappers --- not this
  * file. This file's only job is being a correct ABI bridge.
  *

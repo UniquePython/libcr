@@ -16,12 +16,12 @@
 # The two conventions agree on rdi, rsi, rdx, r8, r9 --- so those
 # arguments can be left exactly where the caller put them. They
 # disagree on the 4th argument: C gives us rcx, the kernel wants r10.
-# rcx is NOT reused for r10 by coincidence --- the `syscall`
+# rcx is NOT reused for r10 by coincidence --- the syscall
 # instruction itself clobbers rcx (it's used by the CPU to save the
 # return address), so the kernel convention avoids it on purpose. We
 # copy rcx into r10 before trapping, for arities that have a 4th arg.
 #
-# `nr` is always the first argument in the C signature (rdi), so
+# nr is always the first argument in the C signature (rdi), so
 # every function shifts its own arguments down by one register before
 # placing the syscall number into rax.
 
@@ -105,6 +105,6 @@ cr_syscall6:
                             # caller's stack per the SysV ABI (only
                             # six integer args travel in registers);
                             # 8(%rsp) is the first stack slot above
-                            # the return address pushed by `call`
+                            # the return address pushed by call
     syscall
     ret

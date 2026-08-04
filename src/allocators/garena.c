@@ -11,7 +11,7 @@
  * Chain layout: each chunk is its own mmap, header-embedded exactly
  * like the fixed-size arena (header at offset 0 of its own mapping,
  * so each chunk's create is exactly one syscall, same reasoning as
- * v1). Chunks link via `prev`, oldest chunk has prev == NULL.
+ * v1). Chunks link via prev, oldest chunk has prev == NULL.
  *
  * arena->head always points at the MOST RECENT chunk --- the only one
  * cr_garena_aligned_alloc ever touches for a normal allocation. Older
@@ -39,7 +39,7 @@ typedef struct cr_arena_chunk
 struct cr_garena
 {
     cr_arena_chunk_t *head; /* most recently mapped chunk; alloc only ever touches this one */
-    size_t original_size;   /* the `size` passed to cr_garena_create --- reset's target */
+    size_t original_size;   /* the size passed to cr_garena_create --- reset's target */
     size_t last_chunk_size; /* usable-region size of the most recently mapped chunk, for growth math */
 };
 
@@ -64,8 +64,8 @@ static uintptr_t align_up(uintptr_t value, size_t alignment)
     return (value + mask) & ~mask;
 }
 
-/* Maps exactly one new chunk of `usable_size` usable bytes, links it
-   as the new head of `arena`'s chain, and updates `last_chunk_size`.
+/* Maps exactly one new chunk of usable_size usable bytes, links it
+   as the new head of arena's chain, and updates last_chunk_size.
    This is the ONLY place a new mmap happens after cr_garena_create,
    and the ONLY place that mutates the chain --- kept as a single,
    small, well-tested function precisely because chain mutation is the
@@ -100,8 +100,8 @@ static bool push_new_chunk(cr_garena_t *arena, size_t usable_size, cr_error_t *r
     /* Linking a chunk in is pure pointer assignment --- it cannot
        fail. This is deliberate: by the time we reach this line,
        cr_mmap has already succeeded, so there is no window where a
-       chunk exists but isn't yet reachable from `arena`, and no
-       window where `arena` claims a chunk that doesn't exist. No
+       chunk exists but isn't yet reachable from arena, and no
+       window where arena claims a chunk that doesn't exist. No
        cleanup-on-partial-failure case exists here because there are
        no more fallible steps left to take. */
     arena->head = chunk;
@@ -243,7 +243,7 @@ bool cr_garena_aligned_alloc(cr_garena_t *arena, size_t size, size_t alignment, 
 
     /* Retry against the freshly pushed chunk. This MUST succeed ---
        new_chunk_size was computed specifically to be big enough for
-       `size` at `alignment` from a fresh cursor. If this ever fails,
+       size at alignment from a fresh cursor. If this ever fails,
        it means the sizing math above has a bug, not that the arena is
        "really" out of memory --- that's why this isn't wrapped in
        another CR_MEM_EXHAUSTED branch: there's no legitimate way for a
@@ -271,7 +271,7 @@ bool cr_garena_aligned_alloc_zeroed(cr_garena_t *arena, size_t size, size_t alig
        behavior) for everything except zeroing. If the underlying
        alloc had to grow the chain to satisfy this request, that
        already happened inside this call --- we don't need to know or
-       care here, `*out` is just wherever the real allocator decided
+       care here, *out is just wherever the real allocator decided
        to put it. */
     if (!cr_garena_aligned_alloc(arena, size, alignment, out, err))
         return false;
@@ -305,7 +305,7 @@ void cr_garena_reset(cr_garena_t *arena)
         chunk = prev;
     }
 
-    /* `chunk` is now the oldest chunk (prev == NULL) --- the survivor. */
+    /* chunk is now the oldest chunk (prev == NULL) --- the survivor. */
     chunk->cursor = chunk->start;
     arena->head = chunk;
     arena->last_chunk_size = arena->original_size;
