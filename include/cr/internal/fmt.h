@@ -1,15 +1,12 @@
-#ifndef CR_INTERNAL_FMT_PROVISIONAL_H
-#define CR_INTERNAL_FMT_PROVISIONAL_H
+#ifndef CR_INTERNAL_FMT_H
+#define CR_INTERNAL_FMT_H
 
 /*
- * PROVISIONAL --- minimal formatter scoped ONLY to what cr_error_set /
+ * Minimal formatter scoped ONLY to what cr_error_set /
  * cr_error_wrap need. This is NOT the library's real string/format
- * module. It will be superseded once that module gets its own
- * first-principles design pass.
+ * module.
  *
  * Do not add features here beyond what error.c actually calls for.
- * If you need more (width, precision, floats, etc.), that's a sign
- * this file has outlived its purpose.
  */
 
 #include <stddef.h>
@@ -51,4 +48,4 @@ size_t cr_vformat(char *restrict buf, size_t bufsize, const char *restrict fmt, 
  */
 size_t cr_format(char *restrict buf, size_t bufsize, const char *restrict fmt, ...);
 
-#endif /* CR_INTERNAL_FMT_PROVISIONAL_H */
+#endif /* CR_INTERNAL_FMT_H */

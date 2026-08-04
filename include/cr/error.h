@@ -57,6 +57,20 @@ typedef enum
     CR_STR_BAD_ARGS,     /* bad arguments: NULL ptr where disallowed */
     CR_STR_OUT_OF_RANGE, /* slice/index/copy request exceeds the view's bounds */
 
+    /*
+     * CR_FMT_* --- text-composition failures, raised by cr/fmt.h's
+     * cr_fmt_compose. Layer-1 single-value formatters (cr_fmt_uint,
+     * cr_fmt_str, ...) never raise these --- truncation is their only
+     * failure mode and the return value already communicates it in
+     * full. See cr/fmt.c for the private name table these codes are
+     * rendered through when formatted via cr_fmt_error (kept out of
+     * this file deliberately --- see cr/fmt.h's module comment).
+     */
+
+    CR_FMT_BAD_ARGS,           /* NULL buf/fmt, or NULL slots with n_slots > 0 */
+    CR_FMT_MALFORMED_TEMPLATE, /* unterminated '{'/'}', or non-numeric slot reference */
+    CR_FMT_SLOT_OUT_OF_RANGE,  /* {N} in fmt with N >= n_slots */
+
 } cr_errcode_t;
 
 /*
