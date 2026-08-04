@@ -10,7 +10,7 @@
  * cr_errcode_t
  *
  * Single flat enum across the whole library. Grouped by naming
- * convention (CR_SYS_*, CR_MEM_*, CR_PARSE_*, ...) rather than by
+ * convention (CR_SYS_*, CR_MEM_*, ...) rather than by
  * separate per-module types, so cr_error_t.code can flow unchanged
  * across module boundaries during composition.
  */
@@ -42,6 +42,20 @@ typedef enum
 
     CR_MEM_BAD_ARGS,  /* bad arguments: zero size, bad alignment, NULL out-param */
     CR_MEM_EXHAUSTED, /* arena has no room left for this allocation */
+
+    /*
+     * CR_STR_* --- string-view-level failures, raised by libcr's own
+     * string module (cr/str/str_view.h) rather than mapped from a raw
+     * kernel errno. Same split in spirit as CR_MEM_BAD_ARGS vs.
+     * CR_MEM_EXHAUSTED: CR_STR_BAD_ARGS is a malformed request (caller
+     * bug), CR_STR_OUT_OF_RANGE is a well-formed request that simply
+     * doesn't fit this view's bounds (may be a caller bug, or may be
+     * a legitimate runtime check --- kept separate so callers can
+     * branch on which case they hit).
+     */
+
+    CR_STR_BAD_ARGS,     /* bad arguments: NULL ptr where disallowed */
+    CR_STR_OUT_OF_RANGE, /* slice/index/copy request exceeds the view's bounds */
 
 } cr_errcode_t;
 
