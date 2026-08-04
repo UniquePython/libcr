@@ -6,6 +6,7 @@
 
 #include "cr/error.h"
 #include "cr/str/str_view.h"
+#include "cr/writer.h"
 
 /*
  * cr_str_buf_t
@@ -185,5 +186,38 @@ bool cr_str_buf_reserve(cr_str_buf_t *buf, size_t min_capacity, cr_error_t *rest
  * other mutating call.
  */
 void cr_str_buf_clear(cr_str_buf_t *buf);
+
+/* ------------------------------------------------------------------
+ * Writer adapter
+ * ------------------------------------------------------------------ */
+
+/*
+ * cr_str_buf_writer
+ *
+ * Returns a cr_writer_t (see cr/writer.h) whose write() appends onto
+ * buf via cr_str_buf_append, and whose flush is NULL --- a string
+ * buffer has no unflushed state; every successful write() is already
+ * real the instant it returns, so there is genuinely nothing to
+ * flush (see cr_writer_t's module doc comment on what a NULL flush
+ * means).
+ *
+ * The returned cr_writer_t borrows buf --- it does not take
+ * ownership, does not extend buf's lifetime, and is only valid for
+ * as long as buf itself is valid. buf must not be NULL; unlike most
+ * of this module's functions this does not report failure via
+ * cr_error_t, because building the cr_writer_t struct itself cannot
+ * fail --- passing a NULL buf here is a caller bug that will surface
+ * the next time the returned writer's write() is actually called
+ * (cr_str_buf_append's own CR_STR_BAD_ARGS check on a NULL buf), not
+ * a moment sooner.
+ *
+ * write()'s failure modes are exactly cr_str_buf_append's: primarily
+ * CR_SYS_* if growth was needed and the underlying mmap failed. Per
+ * cr_str_buf_append's own contract, a failed write() here leaves buf
+ * completely unchanged (no partial append) --- stronger than
+ * cr_writer_t's generic "unspecified prefix may be written" floor,
+ * see that type's module doc comment.
+ */
+cr_writer_t cr_str_buf_writer(cr_str_buf_t *buf);
 
 #endif /* CR_STR_STR_BUF_H */

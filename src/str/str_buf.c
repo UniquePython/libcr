@@ -213,3 +213,33 @@ void cr_str_buf_clear(cr_str_buf_t *buf)
 
     buf->len = 0;
 }
+
+/* ------------------------------------------------------------------
+ * Writer adapter
+ * ------------------------------------------------------------------ */
+
+static bool str_buf_writer_write(void *ctx, const char *bytes, size_t len, cr_error_t *restrict err)
+{
+    cr_str_buf_t *buf = (cr_str_buf_t *)ctx;
+
+    cr_str_view_t sv;
+    sv.ptr = bytes;
+    sv.len = len;
+
+    if (!cr_str_buf_append(buf, sv, err))
+    {
+        cr_error_wrap(err, "cr_str_buf_writer: write failed");
+        return false;
+    }
+
+    return true;
+}
+
+cr_writer_t cr_str_buf_writer(cr_str_buf_t *buf)
+{
+    cr_writer_t w;
+    w.write = str_buf_writer_write;
+    w.flush = NULL; /* nothing to flush --- see header doc comment */
+    w.ctx = buf;
+    return w;
+}

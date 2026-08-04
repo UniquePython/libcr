@@ -365,3 +365,157 @@ bool cr_fmt_compose(char *buf, size_t bufsize, const char *fmt,
 
     return true;
 }
+
+/* Validates fmt against n_slots without writing anything anywhere ---
+   the first pass of cr_fmt_compose_to's two-pass contract (see
+   cr/fmt.h). Identical scanning logic to cr_fmt_compose's own loop
+   above, deliberately kept in sync by hand rather than factored into
+   a single parameterized walk shared by both: cr_fmt_compose's loop
+   also has to interleave writing at every step, and threading a
+   "maybe write, maybe don't" flag through that loop was judged more
+   error-prone than two straightforward, separately-readable loops. */
+static bool validate_template(const char *fmt, size_t n_slots, cr_error_t *restrict err)
+{
+    size_t i = 0;
+
+    while (fmt[i] != '\0')
+    {
+        char c = fmt[i];
+
+        if (c == '{')
+        {
+            if (fmt[i + 1] == '{')
+            {
+                i += 2;
+                continue;
+            }
+
+            size_t j = i + 1;
+            size_t index;
+
+            if (!parse_slot_index(fmt, &j, &index))
+            {
+                cr_error_set(err, CR_FMT_MALFORMED_TEMPLATE,
+                             "cr_fmt_compose_to: malformed '{' at offset %zu (expected a decimal slot index followed by '}', or '{{')", i);
+                return false;
+            }
+
+            if (index >= n_slots)
+            {
+                cr_error_set(err, CR_FMT_SLOT_OUT_OF_RANGE,
+                             "cr_fmt_compose_to: template references slot {%zu} but only %zu slot(s) were given", index, n_slots);
+                return false;
+            }
+
+            i = j;
+            continue;
+        }
+
+        if (c == '}')
+        {
+            if (fmt[i + 1] == '}')
+            {
+                i += 2;
+                continue;
+            }
+
+            cr_error_set(err, CR_FMT_MALFORMED_TEMPLATE,
+                         "cr_fmt_compose_to: unmatched '}' at offset %zu (use '}}' for a literal '}')", i);
+            return false;
+        }
+
+        ++i;
+    }
+
+    return true;
+}
+
+bool cr_fmt_compose_to(cr_writer_t w, const char *fmt,
+                       const cr_str_view_t *slots, size_t n_slots,
+                       cr_error_t *restrict err)
+{
+    if (w.write == NULL || fmt == NULL || (slots == NULL && n_slots > 0))
+    {
+        cr_error_set(err, CR_FMT_BAD_ARGS, "cr_fmt_compose_to: w.write and fmt must be non-NULL, and slots must be non-NULL if n_slots > 0");
+        return false;
+    }
+
+    /* Pass 1: validate the whole template before writing anything ---
+       see cr/fmt.h's two-pass contract for cr_fmt_compose_to. */
+    if (!validate_template(fmt, n_slots, err))
+        return false;
+
+    /* Pass 2: known-valid, so this can only fail via a genuine
+       cr_writer_t failure --- no CR_FMT_MALFORMED_TEMPLATE or
+       CR_FMT_SLOT_OUT_OF_RANGE is possible past this point. */
+    size_t i = 0;
+
+    while (fmt[i] != '\0')
+    {
+        char c = fmt[i];
+
+        if (c == '{')
+        {
+            if (fmt[i + 1] == '{')
+            {
+                if (!cr_writer_write(w, "{", 1, err))
+                {
+                    cr_error_wrap(err, "cr_fmt_compose_to: write failed");
+                    return false;
+                }
+                i += 2;
+                continue;
+            }
+
+            size_t j = i + 1;
+            size_t index;
+
+            /* Cannot fail --- already validated above. */
+            (void)parse_slot_index(fmt, &j, &index);
+
+            if (slots[index].len > 0)
+            {
+                if (!cr_writer_write(w, slots[index].ptr, slots[index].len, err))
+                {
+                    cr_error_wrap(err, "cr_fmt_compose_to: write failed");
+                    return false;
+                }
+            }
+
+            i = j;
+            continue;
+        }
+
+        if (c == '}')
+        {
+            /* Cannot be an unmatched '}' --- already validated above. */
+            if (!cr_writer_write(w, "}", 1, err))
+            {
+                cr_error_wrap(err, "cr_fmt_compose_to: write failed");
+                return false;
+            }
+            i += 2;
+            continue;
+        }
+
+        /* Copy a maximal run of ordinary bytes in one write() call
+           rather than one byte at a time --- cr_fmt_compose's
+           fixed-buffer version writes a byte at a time because
+           write_bounded_char's bounds-check is essentially free; a
+           real cr_writer_t's write() is not free per call (it may be
+           a syscall, or at minimum a function-pointer dispatch), so
+           batching literal runs here is a meaningful, not cosmetic,
+           difference from cr_fmt_compose's loop. */
+        size_t run_start = i;
+        while (fmt[i] != '\0' && fmt[i] != '{' && fmt[i] != '}')
+            ++i;
+
+        if (!cr_writer_write(w, fmt + run_start, i - run_start, err))
+        {
+            cr_error_wrap(err, "cr_fmt_compose_to: write failed");
+            return false;
+        }
+    }
+
+    return true;
+}

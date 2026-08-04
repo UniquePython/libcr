@@ -7,6 +7,7 @@
 
 #include "cr/error.h"
 #include "cr/str/str_view.h"
+#include "cr/writer.h"
 
 /*
  * cr/fmt --- text formatting, split into two independent layers..
@@ -202,5 +203,40 @@ size_t cr_fmt_error(char *buf, size_t bufsize, const cr_error_t *err);
 bool cr_fmt_compose(char *buf, size_t bufsize, const char *fmt,
                     const cr_str_view_t *slots, size_t n_slots,
                     size_t *out_len, cr_error_t *restrict err);
+
+/*
+ * cr_fmt_compose_to
+ *
+ * Writer-direct sibling of cr_fmt_compose. Same template/slot syntax
+ * and semantics (see cr_fmt_compose's doc comment above), but writes
+ * through w instead of into a fixed buf, and consequently has NO
+ * truncation concept at all --- a writer-backed destination has no
+ * fixed size to overflow, so every byte the template produces is
+ * always written in full on success.
+ *
+ * TWO-PASS CONTRACT, load-bearing: the entire template is validated
+ * FIRST, before anything is written to w. This means:
+ *   - CR_FMT_BAD_ARGS, CR_FMT_MALFORMED_TEMPLATE, and
+ *     CR_FMT_SLOT_OUT_OF_RANGE can ONLY happen before any byte has
+ *     reached w --- a template/slot error never leaves partial or
+ *     garbled output behind.
+ *   - Once validation passes, the only remaining failure mode is a
+ *     genuine cr_writer_t failure during the second (writing) pass.
+ *     At that point cr_writer_t's own "unspecified prefix may
+ *     already be written" caveat applies IN FULL --- this function
+ *     has no rollback mechanism and cannot undo bytes already handed
+ *     to w. A caller needing atomicity (all-or-nothing output) must
+ *     build that guarantee itself at a higher layer; it is not, and
+ *     structurally cannot be, provided here.
+ *
+ * On success, this returns true. On failure, false is returned and
+ * err (if non-NULL) is populated with the same CR_FMT_* codes as
+ * cr_fmt_compose for template/slot problems, or whatever err the
+ * failing cr_writer_write call populated (wrapped with function-level
+ * context) for a writer failure.
+ */
+bool cr_fmt_compose_to(cr_writer_t w, const char *fmt,
+                       const cr_str_view_t *slots, size_t n_slots,
+                       cr_error_t *restrict err);
 
 #endif /* CR_FMT_H */
